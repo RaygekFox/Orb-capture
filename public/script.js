@@ -3,7 +3,7 @@ const ctx = canvas.getContext('2d');
 canvas.width = 500;
 canvas.height = 500;
 
-const socket = io('http://localhost:3000'); // Змінити на URL бекенду після хостингу
+const socket = io();
 let players = {};
 let orb = {};
 

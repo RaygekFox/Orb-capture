@@ -140,28 +140,28 @@ io.on('connection', (socket) => {
         }
     });
 
+    socket.on('throwOrb', (data) => {
+        const player = players[socket.id];
+        if (!player || orb.holder !== socket.id) return;
+
+        const dx = data.targetX - orb.x;
+        const dy = data.targetY - orb.y;
+        const distance = Math.hypot(dx, dy);
+        
+        // Normalize direction and apply throw speed
+        orbVelocity.x = (dx / distance) * ORB_THROW_SPEED;
+        orbVelocity.y = (dy / distance) * ORB_THROW_SPEED;
+        
+        orb.holder = null;
+        orbMoving = true;
+    });
+
     socket.on('disconnect', () => {
         console.log(`Player disconnected: ${socket.id}`);
         delete players[socket.id];
         if (orb.holder === socket.id) orb.holder = null;
         io.emit('gameState', { players, orb, bases });
     });
-});
-
-socket.on('throwOrb', (data) => {
-    const player = players[socket.id];
-    if (!player || orb.holder !== socket.id) return;
-
-    const dx = data.targetX - orb.x;
-    const dy = data.targetY - orb.y;
-    const distance = Math.hypot(dx, dy);
-    
-    // Normalize direction and apply throw speed
-    orbVelocity.x = (dx / distance) * ORB_THROW_SPEED;
-    orbVelocity.y = (dy / distance) * ORB_THROW_SPEED;
-    
-    orb.holder = null;
-    orbMoving = true;
 });
 
 // Add an update loop for orb movement

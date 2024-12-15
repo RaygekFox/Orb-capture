@@ -72,6 +72,14 @@ function drawPlayer(player, isHolder) {
         ctx.lineWidth = 3;
         roundRect(ctx, player.x, player.y, 30, 30, 8, false, true);
     }
+
+    // Show stun effect
+    if (player.stunned) {
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+        ctx.beginPath();
+        ctx.arc(player.x + 15, player.y + 15, 20, 0, Math.PI * 2);
+        ctx.fill();
+    }
 }
 
 // Helper function to draw rounded rectangles
@@ -94,28 +102,56 @@ function roundRect(ctx, x, y, width, height, radius, fill = true, stroke = true)
 let currentMovement = { dx: 0, dy: 0 };
 
 window.addEventListener('keydown', (e) => {
-    if (e.key === 'ArrowUp') currentMovement.dy = -1;
-    if (e.key === 'ArrowDown') currentMovement.dy = 1;
-    if (e.key === 'ArrowLeft') currentMovement.dx = -1;
-    if (e.key === 'ArrowRight') currentMovement.dx = 1;
-    
-    if (e.key.toLowerCase() === 'e') {
-        socket.emit('orbAction');
+    switch(e.key) {
+        case 'ArrowUp':
+            currentMovement.dy = -1;
+            break;
+        case 'ArrowDown':
+            currentMovement.dy = 1;
+            break;
+        case 'ArrowLeft':
+            currentMovement.dx = -1;
+            break;
+        case 'ArrowRight':
+            currentMovement.dx = 1;
+            break;
+        case 'e':
+        case 'E':
+            socket.emit('orbAction');
+            break;
     }
 });
 
 window.addEventListener('keyup', (e) => {
-    if (e.key === 'ArrowUp' && currentMovement.dy === -1) currentMovement.dy = 0;
-    if (e.key === 'ArrowDown' && currentMovement.dy === 1) currentMovement.dy = 0;
-    if (e.key === 'ArrowLeft' && currentMovement.dx === -1) currentMovement.dx = 0;
-    if (e.key === 'ArrowRight' && currentMovement.dx === 1) currentMovement.dx = 0;
+    switch(e.key) {
+        case 'ArrowUp':
+            if (currentMovement.dy === -1) currentMovement.dy = 0;
+            break;
+        case 'ArrowDown':
+            if (currentMovement.dy === 1) currentMovement.dy = 0;
+            break;
+        case 'ArrowLeft':
+            if (currentMovement.dx === -1) currentMovement.dx = 0;
+            break;
+        case 'ArrowRight':
+            if (currentMovement.dx === 1) currentMovement.dx = 0;
+            break;
+    }
 });
 
-// Send movement updates at a fixed rate
+// Movement update at fixed rate
 setInterval(() => {
     if (currentMovement.dx !== 0 || currentMovement.dy !== 0) {
         socket.emit('move', currentMovement);
     }
-}, 1000 / 60); // 60 times per second
+}, 1000 / 60);
 
 teamSwitchButton.onclick = () => socket.emit('switchTeam');
+
+canvas.addEventListener('click', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const clickY = e.clientY - rect.top;
+    
+    socket.emit('throwOrb', { targetX: clickX, targetY: clickY });
+});

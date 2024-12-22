@@ -14,10 +14,27 @@ teamSwitchButton.textContent = 'Switch Team';
 teamSwitchButton.className = 'team-switch-btn';
 document.body.appendChild(teamSwitchButton);
 
+// Add progress bars to HTML
+const progressContainer = document.createElement('div');
+progressContainer.className = 'progress-container';
+document.body.appendChild(progressContainer);
+
+const redProgress = document.createElement('div');
+redProgress.className = 'progress-bar red';
+const blueProgress = document.createElement('div');
+blueProgress.className = 'progress-bar blue';
+progressContainer.appendChild(redProgress);
+progressContainer.appendChild(blueProgress);
+
 socket.on('gameState', (data) => {
     players = data.players;
     orb = data.orb;
     bases = data.bases;
+    
+    // Update progress bars
+    redProgress.style.width = `${(data.teamProgress.red / 50000) * 100}%`;
+    blueProgress.style.width = `${(data.teamProgress.blue / 50000) * 100}%`;
+    
     render();
 });
 
@@ -41,6 +58,20 @@ function render() {
     for (const id in players) {
         const player = players[id];
         drawPlayer(player, id === orb.holder);
+    }
+
+    // Draw barriers
+    if (data.barriers) {
+        data.barriers.forEach(barrier => {
+            ctx.fillStyle = colors[barrier.team].fill + (barrier.health * 30).toString(16);
+            ctx.strokeStyle = colors[barrier.team].stroke;
+            ctx.lineWidth = 2;
+            
+            ctx.beginPath();
+            ctx.rect(barrier.x - 15, barrier.y - 30, 30, 60);
+            ctx.fill();
+            ctx.stroke();
+        });
     }
 }
 
@@ -132,6 +163,9 @@ window.addEventListener('keydown', (e) => {
         case 'e':
             socket.emit('orbAction');
             break;
+        case 'f':
+            socket.emit('createBarrier');
+            break;
     }
 
     if (movementChanged) {
@@ -187,3 +221,42 @@ canvas.addEventListener('click', (e) => {
     
     socket.emit('throwOrb', { targetX: clickX, targetY: clickY });
 });
+
+// Add styles to your CSS
+const styles = `
+.progress-container {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 300px;
+    height: 30px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 15px;
+    overflow: hidden;
+    display: flex;
+}
+
+.progress-bar {
+    height: 100%;
+    transition: width 0.3s ease;
+}
+
+.progress-bar.red {
+    background: #ff6b6b;
+}
+
+.progress-bar.blue {
+    background: #4dabf7;
+}
+`;
+
+// Add collision detection to player movement
+function checkBarrierCollision(x, y, team) {
+    return data.barriers.some(barrier => {
+        if (barrier.team === team) return false;
+        
+        return x > barrier.x - 45 && x < barrier.x + 45 &&
+               y > barrier.y - 60 && y < barrier.y + 60;
+    });
+}

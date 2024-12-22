@@ -21,6 +21,10 @@ const ORB_THROW_SPEED = 400; // pixels per second
 const ORB_THROW_DISTANCE = 300; // maximum throw distance
 let orbVelocity = { x: 0, y: 0 };
 let orbMoving = false;
+const WIN_TIME = 50000; // 50 seconds in milliseconds
+const SCORE_RADIUS = 80; // Radius to check if orb is in base
+const BARRIER_HEALTH = 3;
+const BARRIER_COOLDOWN = 10000;
 
 // Game state
 const players = {};
@@ -40,6 +44,14 @@ const TEAMS = {
     BLUE: 'blue'
 };
 
+// Add to game state
+const teamProgress = {
+    red: 0,
+    blue: 0
+};
+
+const barriers = [];
+
 io.on('connection', (socket) => {
     console.log(`Player connected: ${socket.id}`);
     
@@ -50,7 +62,8 @@ io.on('connection', (socket) => {
         team: Math.random() < 0.5 ? TEAMS.RED : TEAMS.BLUE,
         lastMoveTime: Date.now(),
         stunned: false,
-        stunEndTime: 0
+        stunEndTime: 0,
+        lastBarrierTime: 0
     };
 
     // Initialize movement state for new player
@@ -60,7 +73,7 @@ io.on('connection', (socket) => {
         isMoving: false
     };
 
-    io.emit('gameState', { players, orb, bases });
+    io.emit('gameState', { players, orb, bases, teamProgress, barriers });
 
     socket.on('moveStart', (data) => {
         if (!playerMovements[socket.id]) return;
@@ -104,7 +117,7 @@ io.on('connection', (socket) => {
                     setTimeout(() => {
                         if (players[holderId]) {
                             players[holderId].stunned = false;
-                            io.emit('gameState', { players, orb, bases });
+                            io.emit('gameState', { players, orb, bases, teamProgress, barriers });
                         }
                     }, STUN_DURATION);
                 }
@@ -116,14 +129,14 @@ io.on('connection', (socket) => {
             }
         }
         
-        io.emit('gameState', { players, orb, bases });
+        io.emit('gameState', { players, orb, bases, teamProgress, barriers });
     });
 
     socket.on('switchTeam', () => {
         const player = players[socket.id];
         if (player) {
             player.team = player.team === TEAMS.RED ? TEAMS.BLUE : TEAMS.RED;
-            io.emit('gameState', { players, orb, bases });
+            io.emit('gameState', { players, orb, bases, teamProgress, barriers });
         }
     });
 
@@ -143,11 +156,47 @@ io.on('connection', (socket) => {
         orbMoving = true;
     });
 
+    socket.on('createBarrier', (position) => {
+        const player = players[socket.id];
+        const currentTime = Date.now();
+        
+        if (!player || player.stunned || 
+            currentTime - player.lastBarrierTime < BARRIER_COOLDOWN || 
+            orb.holder === socket.id) return;
+
+        const barrier = {
+            x: player.x,
+            y: player.y,
+            team: player.team,
+            health: BARRIER_HEALTH,
+            id: Date.now()
+        };
+
+        barriers.push(barrier);
+        player.lastBarrierTime = currentTime;
+        
+        io.emit('gameState', { players, orb, bases, teamProgress, barriers });
+    });
+
+    socket.on('hitBarrier', (barrierId) => {
+        const player = players[socket.id];
+        const barrier = barriers.find(b => b.id === barrierId);
+        
+        if (!barrier || barrier.team === player.team) return;
+        
+        barrier.health--;
+        if (barrier.health <= 0) {
+            barriers.splice(barriers.indexOf(barrier), 1);
+        }
+        
+        io.emit('gameState', { players, orb, bases, teamProgress, barriers });
+    });
+
     socket.on('disconnect', () => {
         console.log(`Player disconnected: ${socket.id}`);
         delete players[socket.id];
         if (orb.holder === socket.id) orb.holder = null;
-        io.emit('gameState', { players, orb, bases });
+        io.emit('gameState', { players, orb, bases, teamProgress, barriers });
         delete playerMovements[socket.id];
     });
 });
@@ -190,8 +239,57 @@ setInterval(() => {
 
     // Emit game state if any players are moving
     if (Object.values(playerMovements).some(m => m.isMoving)) {
-        io.emit('gameState', { players, orb, bases });
+        io.emit('gameState', { players, orb, bases, teamProgress, barriers });
     }
+
+    // Update orb position if it's moving
+    if (orbMoving && !orb.holder) {
+        orb.x += orbVelocity.x * deltaTime;
+        orb.y += orbVelocity.y * deltaTime;
+
+        // Check if orb hit any walls
+        if (orb.x <= 0 || orb.x >= GAME_WIDTH) {
+            orbVelocity.x *= -0.5;
+            orb.x = Math.max(0, Math.min(GAME_WIDTH, orb.x));
+        }
+        if (orb.y <= 0 || orb.y >= GAME_HEIGHT) {
+            orbVelocity.y *= -0.5;
+            orb.y = Math.max(0, Math.min(GAME_HEIGHT, orb.y));
+        }
+
+        // Apply friction
+        orbVelocity.x *= 0.99;
+        orbVelocity.y *= 0.99;
+
+        // Stop moving if velocity is very low
+        if (Math.abs(orbVelocity.x) < 1 && Math.abs(orbVelocity.y) < 1) {
+            orbMoving = false;
+            orbVelocity = { x: 0, y: 0 };
+        }
+    }
+
+    // Update team progress
+    if (!orb.holder && !orbMoving) {
+        const redDistance = Math.hypot(orb.x - bases.red.x, orb.y - bases.red.y);
+        const blueDistance = Math.hypot(orb.x - bases.blue.x, orb.y - bases.blue.y);
+
+        if (redDistance < SCORE_RADIUS) {
+            teamProgress.red += deltaTime * 1000;
+            if (teamProgress.red >= WIN_TIME) {
+                io.emit('gameOver', { winner: 'red' });
+                // Reset game state here
+            }
+        } else if (blueDistance < SCORE_RADIUS) {
+            teamProgress.blue += deltaTime * 1000;
+            if (teamProgress.blue >= WIN_TIME) {
+                io.emit('gameOver', { winner: 'blue' });
+                // Reset game state here
+            }
+        }
+    }
+
+    // Include progress in gameState emissions
+    io.emit('gameState', { players, orb, bases, teamProgress, barriers });
 }, 1000/60);
 
 const PORT = process.env.PORT || 3000;

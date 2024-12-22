@@ -148,7 +148,6 @@ io.on('connection', (socket) => {
         const dy = data.targetY - orb.y;
         const distance = Math.hypot(dx, dy);
         
-        // Normalize direction and apply throw speed
         orbVelocity.x = (dx / distance) * ORB_THROW_SPEED;
         orbVelocity.y = (dy / distance) * ORB_THROW_SPEED;
         
@@ -179,10 +178,10 @@ io.on('connection', (socket) => {
     });
 
     socket.on('hitBarrier', (barrierId) => {
-        const player = players[socket.id];
         const barrier = barriers.find(b => b.id === barrierId);
+        const player = players[socket.id];
         
-        if (!barrier || barrier.team === player.team) return;
+        if (!barrier || !player || barrier.team === player.team) return;
         
         barrier.health--;
         if (barrier.health <= 0) {
@@ -228,12 +227,38 @@ setInterval(() => {
         newX = Math.max(0, Math.min(GAME_WIDTH - PLAYER_SIZE, newX));
         newY = Math.max(0, Math.min(GAME_HEIGHT - PLAYER_SIZE, newY));
 
-        player.x = newX;
-        player.y = newY;
+        // Check barrier collisions
+        const canMove = !barriers.some(barrier => {
+            if (barrier.team === player.team) return false;
+            
+            const playerBox = {
+                left: newX - PLAYER_SIZE/2,
+                right: newX + PLAYER_SIZE/2,
+                top: newY - PLAYER_SIZE/2,
+                bottom: newY + PLAYER_SIZE/2
+            };
+            
+            const barrierBox = {
+                left: barrier.x - 15,
+                right: barrier.x + 15,
+                top: barrier.y - 30,
+                bottom: barrier.y + 30
+            };
+            
+            return !(playerBox.left > barrierBox.right || 
+                    playerBox.right < barrierBox.left || 
+                    playerBox.top > barrierBox.bottom || 
+                    playerBox.bottom < barrierBox.top);
+        });
 
-        if (orb.holder === playerId) {
-            orb.x = newX;
-            orb.y = newY;
+        if (canMove) {
+            player.x = newX;
+            player.y = newY;
+
+            if (orb.holder === playerId) {
+                orb.x = newX;
+                orb.y = newY;
+            }
         }
     });
 

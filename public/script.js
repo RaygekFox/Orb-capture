@@ -23,43 +23,18 @@ teamSwitchButton.className = 'team-switch-btn';
 document.body.appendChild(teamSwitchButton);
 
 // Add new styles
-const gameStyles = document.createElement('style');
-gameStyles.textContent = `
-    .score-container {
-        position: fixed;
-        top: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        display: flex;
-        gap: 10px;
-        width: 400px;
-        z-index: 1000;
-    }
-
-    .team-progress {
-        flex: 1;
-        height: 20px;
-        background: rgba(0, 0, 0, 0.3);
-        border-radius: 10px;
-        overflow: hidden;
-        border: 2px solid rgba(255, 255, 255, 0.2);
-    }
-
-    .progress-fill {
-        width: 0%;
-        height: 100%;
-        transition: width 0.3s ease;
-    }
-
-    .red-team .progress-fill {
-        background-color: #ff6b6b;
-    }
-
-    .blue-team .progress-fill {
-        background-color: #4dabf7;
-    }
+const gameUI = document.createElement('div');
+gameUI.innerHTML = `
+    <div class="score-container">
+        <div class="team-progress red-team">
+            <div class="progress-fill"></div>
+        </div>
+        <div class="team-progress blue-team">
+            <div class="progress-fill"></div>
+        </div>
+    </div>
 `;
-document.head.appendChild(gameStyles);
+document.body.appendChild(gameUI);
 
 socket.on('gameState', (data) => {
     players = data.players;

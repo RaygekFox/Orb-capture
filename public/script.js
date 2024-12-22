@@ -132,8 +132,6 @@ function roundRect(ctx, x, y, width, height, radius, fill = true, stroke = true)
     if (stroke) ctx.stroke();
 }
 
-let currentMovement = { dx: 0, dy: 0 };
-
 window.addEventListener('keydown', (e) => {
     let movementChanged = false;
     

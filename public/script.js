@@ -7,6 +7,7 @@ const socket = io();
 let players = {};
 let orb = {};
 let bases = {};
+let barriers = [];
 
 // Add team switch button with styling
 const teamSwitchButton = document.createElement('button');
@@ -30,6 +31,7 @@ socket.on('gameState', (data) => {
     players = data.players;
     orb = data.orb;
     bases = data.bases;
+    barriers = data.barriers || [];
     
     // Update progress bars
     redProgress.style.width = `${(data.teamProgress.red / 50000) * 100}%`;
@@ -61,18 +63,16 @@ function render() {
     }
 
     // Draw barriers
-    if (data.barriers) {
-        data.barriers.forEach(barrier => {
-            ctx.fillStyle = colors[barrier.team].fill + (barrier.health * 30).toString(16);
-            ctx.strokeStyle = colors[barrier.team].stroke;
-            ctx.lineWidth = 2;
-            
-            ctx.beginPath();
-            ctx.rect(barrier.x - 15, barrier.y - 30, 30, 60);
-            ctx.fill();
-            ctx.stroke();
-        });
-    }
+    barriers.forEach(barrier => {
+        ctx.fillStyle = colors[barrier.team].fill + (barrier.health * 30).toString(16);
+        ctx.strokeStyle = colors[barrier.team].stroke;
+        ctx.lineWidth = 2;
+        
+        ctx.beginPath();
+        ctx.rect(barrier.x - 15, barrier.y - 30, 30, 60);
+        ctx.fill();
+        ctx.stroke();
+    });
 }
 
 function drawBase(base, color) {
@@ -253,7 +253,7 @@ const styles = `
 
 // Add collision detection to player movement
 function checkBarrierCollision(x, y, team) {
-    return data.barriers.some(barrier => {
+    return barriers.some(barrier => {
         if (barrier.team === team) return false;
         
         return x > barrier.x - 45 && x < barrier.x + 45 &&

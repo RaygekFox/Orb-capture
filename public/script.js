@@ -232,55 +232,55 @@ canvas.addEventListener('click', (e) => {
 });
 
 // Add styles to your CSS
-const styleSheet = document.createElement('style');
-styleSheet.textContent = `
-.progress-container {
-    position: fixed;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 300px;
-    height: 30px;
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 15px;
-    overflow: hidden;
-    display: flex;
-    border: 2px solid rgba(255, 255, 255, 0.2);
-}
-
-.progress-bar {
-    height: 100%;
-    transition: width 0.3s ease;
-}
-
-.progress-bar.red {
-    background: #ff6b6b;
-}
-
-.progress-bar.blue {
-    background: #4dabf7;
-}
-
-.team-switch-btn {
-    position: fixed;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    padding: 10px 20px;
-    background: rgba(0, 0, 0, 0.3);
-    border: 2px solid rgba(255, 255, 255, 0.2);
-    color: white;
-    border-radius: 20px;
-    cursor: pointer;
-    font-family: Arial, sans-serif;
-    transition: background 0.3s;
-}
-
-.team-switch-btn:hover {
-    background: rgba(0, 0, 0, 0.5);
-}
-`;
-document.head.appendChild(styleSheet);
+// const styleSheet = document.createElement('style');
+// styleSheet.textContent = `
+// .progress-container {
+//     position: fixed;
+//     top: 20px;
+//     left: 50%;
+//     transform: translateX(-50%);
+//     width: 300px;
+//     height: 30px;
+//     background: rgba(0, 0, 0, 0.3);
+//     border-radius: 15px;
+//     overflow: hidden;
+//     display: flex;
+//     border: 2px solid rgba(255, 255, 255, 0.2);
+// }
+//
+// .progress-bar {
+//     height: 100%;
+//     transition: width 0.3s ease;
+// }
+//
+// .progress-bar.red {
+//     background: #ff6b6b;
+// }
+//
+// .progress-bar.blue {
+//     background: #4dabf7;
+// }
+//
+// .team-switch-btn {
+//     position: fixed;
+//     bottom: 20px;
+//     left: 50%;
+//     transform: translateX(-50%);
+//     padding: 10px 20px;
+//     background: rgba(0, 0, 0, 0.3);
+//     border: 2px solid rgba(255, 255, 255, 0.2);
+//     color: white;
+//     border-radius: 20px;
+//     cursor: pointer;
+//     font-family: Arial, sans-serif;
+//     transition: background 0.3s;
+// }
+//
+// .team-switch-btn:hover {
+//     background: rgba(0, 0, 0, 0.5);
+// }
+// `;
+// document.head.appendChild(styleSheet);
 
 // Add collision detection to player movement
 function checkBarrierCollision(x, y, team) {

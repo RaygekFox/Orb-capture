@@ -102,49 +102,81 @@ function roundRect(ctx, x, y, width, height, radius, fill = true, stroke = true)
 let currentMovement = { dx: 0, dy: 0 };
 
 window.addEventListener('keydown', (e) => {
-    switch(e.key) {
-        case 'ArrowUp':
-            currentMovement.dy = -1;
+    let movementChanged = false;
+    
+    switch(e.key.toLowerCase()) {
+        case 'w':
+            if (currentMovement.dy !== -1) {
+                currentMovement.dy = -1;
+                movementChanged = true;
+            }
             break;
-        case 'ArrowDown':
-            currentMovement.dy = 1;
+        case 's':
+            if (currentMovement.dy !== 1) {
+                currentMovement.dy = 1;
+                movementChanged = true;
+            }
             break;
-        case 'ArrowLeft':
-            currentMovement.dx = -1;
+        case 'a':
+            if (currentMovement.dx !== -1) {
+                currentMovement.dx = -1;
+                movementChanged = true;
+            }
             break;
-        case 'ArrowRight':
-            currentMovement.dx = 1;
+        case 'd':
+            if (currentMovement.dx !== 1) {
+                currentMovement.dx = 1;
+                movementChanged = true;
+            }
             break;
         case 'e':
-        case 'E':
             socket.emit('orbAction');
             break;
+    }
+
+    if (movementChanged) {
+        socket.emit('moveStart', currentMovement);
     }
 });
 
 window.addEventListener('keyup', (e) => {
-    switch(e.key) {
-        case 'ArrowUp':
-            if (currentMovement.dy === -1) currentMovement.dy = 0;
+    let movementChanged = false;
+
+    switch(e.key.toLowerCase()) {
+        case 'w':
+            if (currentMovement.dy === -1) {
+                currentMovement.dy = 0;
+                movementChanged = true;
+            }
             break;
-        case 'ArrowDown':
-            if (currentMovement.dy === 1) currentMovement.dy = 0;
+        case 's':
+            if (currentMovement.dy === 1) {
+                currentMovement.dy = 0;
+                movementChanged = true;
+            }
             break;
-        case 'ArrowLeft':
-            if (currentMovement.dx === -1) currentMovement.dx = 0;
+        case 'a':
+            if (currentMovement.dx === -1) {
+                currentMovement.dx = 0;
+                movementChanged = true;
+            }
             break;
-        case 'ArrowRight':
-            if (currentMovement.dx === 1) currentMovement.dx = 0;
+        case 'd':
+            if (currentMovement.dx === 1) {
+                currentMovement.dx = 0;
+                movementChanged = true;
+            }
             break;
+    }
+
+    if (movementChanged) {
+        if (currentMovement.dx === 0 && currentMovement.dy === 0) {
+            socket.emit('moveEnd');
+        } else {
+            socket.emit('moveStart', currentMovement);
+        }
     }
 });
-
-// Movement update at fixed rate
-setInterval(() => {
-    if (currentMovement.dx !== 0 || currentMovement.dy !== 0) {
-        socket.emit('move', currentMovement);
-    }
-}, 1000 / 60);
 
 teamSwitchButton.onclick = () => socket.emit('switchTeam');
 

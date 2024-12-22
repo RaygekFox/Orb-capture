@@ -26,6 +26,9 @@ let orbMoving = false;
 const players = {};
 const orb = { x: GAME_WIDTH/2, y: GAME_HEIGHT/2, holder: null };
 
+// Add movement states tracking
+const playerMovements = {};
+
 // Team bases
 const bases = {
     red: { x: 100, y: GAME_HEIGHT/2 },
@@ -50,41 +53,25 @@ io.on('connection', (socket) => {
         stunEndTime: 0
     };
 
+    // Initialize movement state for new player
+    playerMovements[socket.id] = {
+        dx: 0,
+        dy: 0,
+        isMoving: false
+    };
+
     io.emit('gameState', { players, orb, bases });
 
-    socket.on('move', (data) => {
-        const player = players[socket.id];
-        if (!player || player.stunned) return;
+    socket.on('moveStart', (data) => {
+        if (!playerMovements[socket.id]) return;
+        playerMovements[socket.id].dx = data.dx;
+        playerMovements[socket.id].dy = data.dy;
+        playerMovements[socket.id].isMoving = true;
+    });
 
-        const currentTime = Date.now();
-        if (currentTime < player.stunEndTime) return;
-
-        const deltaTime = (currentTime - player.lastMoveTime) / 1000;
-        player.lastMoveTime = currentTime;
-
-        // Apply speed modifications
-        let currentSpeed = BASE_MOVEMENT_SPEED;
-        if (orb.holder === socket.id) {
-            currentSpeed *= HOLDER_SPEED_MULTIPLIER;
-        }
-
-        const moveAmount = currentSpeed * deltaTime;
-        let newX = player.x + (data.dx * moveAmount);
-        let newY = player.y + (data.dy * moveAmount);
-
-        // Keep player within bounds
-        newX = Math.max(0, Math.min(GAME_WIDTH - PLAYER_SIZE, newX));
-        newY = Math.max(0, Math.min(GAME_HEIGHT - PLAYER_SIZE, newY));
-
-        player.x = newX;
-        player.y = newY;
-
-        if (orb.holder === socket.id) {
-            orb.x = newX;
-            orb.y = newY;
-        }
-
-        io.emit('gameState', { players, orb, bases });
+    socket.on('moveEnd', (data) => {
+        if (!playerMovements[socket.id]) return;
+        playerMovements[socket.id].isMoving = false;
     });
 
     socket.on('orbAction', () => {
@@ -161,34 +148,48 @@ io.on('connection', (socket) => {
         delete players[socket.id];
         if (orb.holder === socket.id) orb.holder = null;
         io.emit('gameState', { players, orb, bases });
+        delete playerMovements[socket.id];
     });
 });
 
-// Add an update loop for orb movement
+// Add continuous movement update loop
 setInterval(() => {
-    if (orbMoving && !orb.holder) {
-        const deltaTime = 1/60; // 60 FPS
+    const currentTime = Date.now();
+    const deltaTime = 1/60; // 60 FPS
+
+    // Update all moving players
+    Object.keys(playerMovements).forEach(playerId => {
+        const movement = playerMovements[playerId];
+        const player = players[playerId];
         
-        // Move orb
-        orb.x += orbVelocity.x * deltaTime;
-        orb.y += orbVelocity.y * deltaTime;
-        
-        // Apply friction
-        const friction = 0.95;
-        orbVelocity.x *= friction;
-        orbVelocity.y *= friction;
-        
-        // Stop if moving too slow
-        if (Math.abs(orbVelocity.x) < 0.1 && Math.abs(orbVelocity.y) < 0.1) {
-            orbMoving = false;
-            orbVelocity.x = 0;
-            orbVelocity.y = 0;
+        if (!player || !movement.isMoving || player.stunned) return;
+        if (currentTime < player.stunEndTime) return;
+
+        // Apply speed modifications
+        let currentSpeed = BASE_MOVEMENT_SPEED;
+        if (orb.holder === playerId) {
+            currentSpeed *= HOLDER_SPEED_MULTIPLIER;
         }
-        
-        // Keep orb within bounds
-        orb.x = Math.max(10, Math.min(GAME_WIDTH - 10, orb.x));
-        orb.y = Math.max(10, Math.min(GAME_HEIGHT - 10, orb.y));
-        
+
+        const moveAmount = currentSpeed * deltaTime;
+        let newX = player.x + (movement.dx * moveAmount);
+        let newY = player.y + (movement.dy * moveAmount);
+
+        // Keep player within bounds
+        newX = Math.max(0, Math.min(GAME_WIDTH - PLAYER_SIZE, newX));
+        newY = Math.max(0, Math.min(GAME_HEIGHT - PLAYER_SIZE, newY));
+
+        player.x = newX;
+        player.y = newY;
+
+        if (orb.holder === playerId) {
+            orb.x = newX;
+            orb.y = newY;
+        }
+    });
+
+    // Emit game state if any players are moving
+    if (Object.values(playerMovements).some(m => m.isMoving)) {
         io.emit('gameState', { players, orb, bases });
     }
 }, 1000/60);

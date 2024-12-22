@@ -3,11 +3,18 @@ const ctx = canvas.getContext('2d');
 canvas.width = 1080;
 canvas.height = 720;
 
+// Add colors object
+const colors = {
+    red: { fill: '#ff6b6b', stroke: '#fa5252' },
+    blue: { fill: '#4dabf7', stroke: '#339af0' }
+};
+
 const socket = io();
 let players = {};
 let orb = {};
 let bases = {};
 let barriers = [];
+let currentMovement = { dx: 0, dy: 0 };
 
 // Add team switch button with styling
 const teamSwitchButton = document.createElement('button');
@@ -86,29 +93,24 @@ function drawBase(base, color) {
 }
 
 function drawPlayer(player, isHolder) {
-    const colors = {
-        red: { fill: '#ff6b6b', stroke: '#fa5252' },
-        blue: { fill: '#4dabf7', stroke: '#339af0' }
-    };
-
     ctx.fillStyle = colors[player.team].fill;
     ctx.strokeStyle = colors[player.team].stroke;
     ctx.lineWidth = 2;
 
     // Draw rounded rectangle
-    roundRect(ctx, player.x, player.y, 30, 30, 8);
+    roundRect(ctx, player.x - 15, player.y - 15, 30, 30, 8);
 
     if (isHolder) {
         ctx.strokeStyle = '#ffd43b';
         ctx.lineWidth = 3;
-        roundRect(ctx, player.x, player.y, 30, 30, 8, false, true);
+        roundRect(ctx, player.x - 15, player.y - 15, 30, 30, 8, false, true);
     }
 
     // Show stun effect
     if (player.stunned) {
         ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
         ctx.beginPath();
-        ctx.arc(player.x + 15, player.y + 15, 20, 0, Math.PI * 2);
+        ctx.arc(player.x, player.y, 20, 0, Math.PI * 2);
         ctx.fill();
     }
 }

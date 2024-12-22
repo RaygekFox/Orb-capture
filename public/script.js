@@ -22,17 +22,44 @@ teamSwitchButton.textContent = 'Switch Team';
 teamSwitchButton.className = 'team-switch-btn';
 document.body.appendChild(teamSwitchButton);
 
-// Add progress bars to HTML
-const progressContainer = document.createElement('div');
-progressContainer.className = 'progress-container';
-document.body.appendChild(progressContainer);
+// Add new styles
+const gameStyles = document.createElement('style');
+gameStyles.textContent = `
+    .score-container {
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 10px;
+        width: 400px;
+        z-index: 1000;
+    }
 
-const redProgress = document.createElement('div');
-redProgress.className = 'progress-bar red';
-const blueProgress = document.createElement('div');
-blueProgress.className = 'progress-bar blue';
-progressContainer.appendChild(redProgress);
-progressContainer.appendChild(blueProgress);
+    .team-progress {
+        flex: 1;
+        height: 20px;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 10px;
+        overflow: hidden;
+        border: 2px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .progress-fill {
+        width: 0%;
+        height: 100%;
+        transition: width 0.3s ease;
+    }
+
+    .red-team .progress-fill {
+        background-color: #ff6b6b;
+    }
+
+    .blue-team .progress-fill {
+        background-color: #4dabf7;
+    }
+`;
+document.head.appendChild(gameStyles);
 
 socket.on('gameState', (data) => {
     players = data.players;
@@ -40,9 +67,14 @@ socket.on('gameState', (data) => {
     bases = data.bases;
     barriers = data.barriers || [];
     
-    // Update progress bars
-    redProgress.style.width = `${(data.teamProgress.red / 50000) * 100}%`;
-    blueProgress.style.width = `${(data.teamProgress.blue / 50000) * 100}%`;
+    // Update progress bars with new selectors
+    const redFill = document.querySelector('.red-team .progress-fill');
+    const blueFill = document.querySelector('.blue-team .progress-fill');
+    
+    if (redFill && blueFill) {
+        redFill.style.width = `${(data.teamProgress.red / 50000) * 100}%`;
+        blueFill.style.width = `${(data.teamProgress.blue / 50000) * 100}%`;
+    }
     
     render();
 });
@@ -69,9 +101,11 @@ function render() {
         drawPlayer(player, id === orb.holder);
     }
 
-    // Draw barriers
+    // Draw barriers with fading effect
     barriers.forEach(barrier => {
-        ctx.fillStyle = colors[barrier.team].fill + (barrier.health * 30).toString(16);
+        const age = Date.now() - barrier.createdAt;
+        const opacity = Math.max(0, 1 - (age / 10000)); // 10 seconds lifetime
+        ctx.fillStyle = colors[barrier.team].fill + Math.floor(opacity * 255).toString(16).padStart(2, '0');
         ctx.strokeStyle = colors[barrier.team].stroke;
         ctx.lineWidth = 2;
         

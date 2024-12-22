@@ -25,6 +25,7 @@ const WIN_TIME = 50000; // 50 seconds in milliseconds
 const SCORE_RADIUS = 80; // Radius to check if orb is in base
 const BARRIER_HEALTH = 3;
 const BARRIER_COOLDOWN = 10000;
+const BARRIER_LIFETIME = 10000; // 10 seconds
 
 // Game state
 const players = {};
@@ -167,12 +168,21 @@ io.on('connection', (socket) => {
             x: player.x,
             y: player.y,
             team: player.team,
-            health: BARRIER_HEALTH,
+            createdAt: currentTime,
             id: Date.now()
         };
 
         barriers.push(barrier);
         player.lastBarrierTime = currentTime;
+        
+        // Remove barrier after lifetime
+        setTimeout(() => {
+            const index = barriers.findIndex(b => b.id === barrier.id);
+            if (index !== -1) {
+                barriers.splice(index, 1);
+                io.emit('gameState', { players, orb, bases, teamProgress, barriers });
+            }
+        }, BARRIER_LIFETIME);
         
         io.emit('gameState', { players, orb, bases, teamProgress, barriers });
     });

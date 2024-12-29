@@ -114,8 +114,16 @@ function drawPlayer(player, isHolder) {
     const time = Date.now();
     
     // Use currentMovement for the local player, zero for others
-    const dx = (player.id === socket.id && currentMovement) ? currentMovement.dx : 0;
-    const dy = (player.id === socket.id && currentMovement) ? currentMovement.dy : 0;
+    const dx = (player.id === socket.id) ? currentMovement.dx : 0;
+    const dy = (player.id === socket.id) ? currentMovement.dy : 0;
+    
+    // Debug movement values
+    console.log('Player movement:', {
+        dx,
+        dy,
+        isLocalPlayer: player.id === socket.id,
+        speed: Math.sqrt(dx * dx + dy * dy)
+    });
     
     // Calculate eye offset based on movement
     const eyeOffsetX = dx * MAX_EYE_OFFSET;
@@ -123,8 +131,16 @@ function drawPlayer(player, isHolder) {
     
     // Calculate leg animation - only animate if actually moving
     const speed = Math.sqrt(dx * dx + dy * dy);
-    const isMoving = speed > 0.01; // Reduced threshold
+    const isMoving = speed > 0.1; // Add threshold to prevent tiny movements
     const legOffset = isMoving ? Math.sin(time * LEG_ANIMATION_SPEED) * LEG_LENGTH * 0.3 : 0;
+    
+    // Debug animation values
+    console.log('Animation values:', {
+        isMoving,
+        legOffset,
+        time,
+        sinValue: Math.sin(time * LEG_ANIMATION_SPEED)
+    });
     
     // Draw legs
     ctx.fillStyle = colors[player.team].fill;
@@ -169,7 +185,6 @@ function drawPlayer(player, isHolder) {
         Math.PI * 2
     );
     ctx.fill();
-    ctx.stroke();
     
     // Draw eye flare (white circle)
     ctx.fillStyle = '#ffffff';

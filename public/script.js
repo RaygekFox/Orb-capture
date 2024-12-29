@@ -113,19 +113,40 @@ function drawBase(base, color) {
 function drawPlayer(player, isHolder) {
     const time = Date.now();
     
+    // Use currentMovement for the local player, zero for others
+    const dx = (player.id === socket.id) ? currentMovement.dx : 0;
+    const dy = (player.id === socket.id) ? currentMovement.dy : 0;
+    
     // Debug movement values
-    console.log('Player movement:', {
-        dx: player.dx,
-        dy: player.dy,
-        speed: Math.sqrt(player.dx * player.dx + player.dy * player.dy)
+    console.log('Player coordinates:', {
+        playerX: player.x,
+        playerY: player.y,
+        dx,
+        dy,
+        isLocalPlayer: player.id === socket.id
     });
     
     // Calculate eye offset based on movement
-    const eyeOffsetX = player.dx * MAX_EYE_OFFSET;
-    const eyeOffsetY = player.dy * MAX_EYE_OFFSET;
+    const eyeOffsetX = dx * MAX_EYE_OFFSET;
+    const eyeOffsetY = dy * MAX_EYE_OFFSET;
+    
+    // Debug eye position
+    console.log('Eye position:', {
+        baseX: player.x,
+        baseY: player.y,
+        offsetX: eyeOffsetX,
+        offsetY: eyeOffsetY,
+        finalX: player.x + eyeOffsetX,
+        finalY: player.y + eyeOffsetY,
+        eyeRadius: EYE_RADIUS,
+        flarePosition: {
+            x: player.x + eyeOffsetX + EYE_RADIUS * 0.3,
+            y: player.y + eyeOffsetY - EYE_RADIUS * 0.3
+        }
+    });
     
     // Calculate leg animation - only animate if actually moving
-    const speed = Math.sqrt(player.dx * player.dx + player.dy * player.dy);
+    const speed = Math.sqrt(dx * dx + dy * dy);
     const isMoving = speed > 0.1; // Add threshold to prevent tiny movements
     const legOffset = isMoving ? Math.sin(time * LEG_ANIMATION_SPEED) * LEG_LENGTH * 0.3 : 0;
     
@@ -141,18 +162,6 @@ function drawPlayer(player, isHolder) {
     ctx.fillStyle = colors[player.team].fill;
     ctx.strokeStyle = colors[player.team].stroke;
     ctx.lineWidth = 2;
-    
-    // Debug drawing positions
-    console.log('Drawing positions:', {
-        playerX: player.x,
-        playerY: player.y,
-        eyeCenter: {
-            x: player.x + eyeOffsetX,
-            y: player.y + eyeOffsetY
-        },
-        eyeRadius: EYE_RADIUS,
-        playerSize: PLAYER_SIZE
-    });
     
     // Left leg
     ctx.fillRect(
@@ -192,6 +201,7 @@ function drawPlayer(player, isHolder) {
         Math.PI * 2
     );
     ctx.fill();
+    ctx.stroke(); // Add stroke to make eye more visible
     
     // Draw eye flare (white circle)
     ctx.fillStyle = '#ffffff';

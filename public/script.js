@@ -14,7 +14,7 @@ let players = {};
 let orb = {};
 let bases = {};
 let barriers = [];
-let currentMovement = { dx: 0, dy: 0 };
+let currentMovement = { x: 0, y: 0 };
 
 // Add team switch button with styling
 const teamSwitchButton = document.createElement('button');
@@ -114,47 +114,36 @@ function drawPlayer(player, isHolder) {
     const time = Date.now();
     
     // Use currentMovement for the local player, zero for others
-    const dx = (player.id === socket.id) ? currentMovement.dx : 0;
-    const dy = (player.id === socket.id) ? currentMovement.dy : 0;
+    let dx = 0;
+    let dy = 0;
+    
+    if (player.id === socket.id && currentMovement) {
+        dx = currentMovement.x || 0;  // Changed from dx to x
+        dy = currentMovement.y || 0;  // Changed from dy to y
+    }
     
     // Debug movement values
-    console.log('Player coordinates:', {
-        playerX: player.x,
-        playerY: player.y,
+    console.log('Movement detection:', {
+        currentMovement,
+        isLocalPlayer: player.id === socket.id,
         dx,
-        dy,
-        isLocalPlayer: player.id === socket.id
+        dy
     });
     
     // Calculate eye offset based on movement
     const eyeOffsetX = dx * MAX_EYE_OFFSET;
     const eyeOffsetY = dy * MAX_EYE_OFFSET;
     
-    // Debug eye position
-    console.log('Eye position:', {
-        baseX: player.x,
-        baseY: player.y,
-        offsetX: eyeOffsetX,
-        offsetY: eyeOffsetY,
-        finalX: player.x + eyeOffsetX,
-        finalY: player.y + eyeOffsetY,
-        eyeRadius: EYE_RADIUS,
-        flarePosition: {
-            x: player.x + eyeOffsetX + EYE_RADIUS * 0.3,
-            y: player.y + eyeOffsetY - EYE_RADIUS * 0.3
-        }
-    });
-    
     // Calculate leg animation - only animate if actually moving
     const speed = Math.sqrt(dx * dx + dy * dy);
-    const isMoving = speed > 0.1; // Add threshold to prevent tiny movements
+    const isMoving = speed > 0.01; // Reduced threshold to make it more sensitive
     const legOffset = isMoving ? Math.sin(time * LEG_ANIMATION_SPEED) * LEG_LENGTH * 0.3 : 0;
     
     // Debug animation values
     console.log('Animation values:', {
+        speed,
         isMoving,
         legOffset,
-        time,
         sinValue: Math.sin(time * LEG_ANIMATION_SPEED)
     });
     

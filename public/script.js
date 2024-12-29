@@ -113,10 +113,6 @@ function drawBase(base, color) {
 function drawPlayer(player, isHolder) {
     const time = Date.now();
     
-    // Use currentMovement for the local player, zero for others
-    const dx = (player.id === socket.id) ? currentMovement.dx : 0;
-    const dy = (player.id === socket.id) ? currentMovement.dy : 0;
-    
     // Debug movement values
     console.log('Player movement:', {
         dx,
@@ -130,7 +126,7 @@ function drawPlayer(player, isHolder) {
     const eyeOffsetY = dy * MAX_EYE_OFFSET;
     
     // Calculate leg animation - only animate if actually moving
-    const speed = Math.sqrt(dx * dx + dy * dy);
+    const speed = Math.sqrt(player.dx * player.dx + player.dy * player.dy);
     const isMoving = speed > 0.1; // Add threshold to prevent tiny movements
     const legOffset = isMoving ? Math.sin(time * LEG_ANIMATION_SPEED) * LEG_LENGTH * 0.3 : 0;
     
@@ -146,6 +142,18 @@ function drawPlayer(player, isHolder) {
     ctx.fillStyle = colors[player.team].fill;
     ctx.strokeStyle = colors[player.team].stroke;
     ctx.lineWidth = 2;
+    
+    // Debug drawing positions
+    console.log('Drawing positions:', {
+        playerX: player.x,
+        playerY: player.y,
+        eyeCenter: {
+            x: player.x + eyeOffsetX,
+            y: player.y + eyeOffsetY
+        },
+        eyeRadius: EYE_RADIUS,
+        playerSize: PLAYER_SIZE
+    });
     
     // Left leg
     ctx.fillRect(

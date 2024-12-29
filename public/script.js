@@ -117,8 +117,9 @@ function drawPlayer(player, isHolder) {
     const eyeOffsetX = player.dx * MAX_EYE_OFFSET;
     const eyeOffsetY = player.dy * MAX_EYE_OFFSET;
     
-    // Calculate leg animation
-    const isMoving = player.dx !== 0 || player.dy !== 0;
+    // Calculate leg animation - only animate if actually moving
+    const speed = Math.sqrt(player.dx * player.dx + player.dy * player.dy);
+    const isMoving = speed > 0.1; // Add threshold to prevent tiny movements
     const legOffset = isMoving ? Math.sin(time * LEG_ANIMATION_SPEED) * LEG_LENGTH * 0.3 : 0;
     
     // Draw legs
@@ -143,6 +144,8 @@ function drawPlayer(player, isHolder) {
     );
     
     // Draw main body (rounded rectangle)
+    ctx.fillStyle = colors[player.team].fill;  // Reset fill style for body
+    ctx.strokeStyle = colors[player.team].stroke;
     roundRect(ctx, 
         player.x - PLAYER_SIZE/2,
         player.y - PLAYER_SIZE/2,

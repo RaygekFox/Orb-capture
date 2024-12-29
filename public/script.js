@@ -114,21 +114,8 @@ function drawPlayer(player, isHolder) {
     const time = Date.now();
     
     // Use currentMovement for the local player, zero for others
-    let dx = 0;
-    let dy = 0;
-    
-    if (player.id === socket.id && currentMovement) {
-        dx = currentMovement.x || 0;  // Changed from dx to x
-        dy = currentMovement.y || 0;  // Changed from dy to y
-    }
-    
-    // Debug movement values
-    console.log('Movement detection:', {
-        currentMovement,
-        isLocalPlayer: player.id === socket.id,
-        dx,
-        dy
-    });
+    const dx = (player.id === socket.id && currentMovement) ? currentMovement.dx : 0;
+    const dy = (player.id === socket.id && currentMovement) ? currentMovement.dy : 0;
     
     // Calculate eye offset based on movement
     const eyeOffsetX = dx * MAX_EYE_OFFSET;
@@ -136,16 +123,8 @@ function drawPlayer(player, isHolder) {
     
     // Calculate leg animation - only animate if actually moving
     const speed = Math.sqrt(dx * dx + dy * dy);
-    const isMoving = speed > 0.01; // Reduced threshold to make it more sensitive
+    const isMoving = speed > 0.01; // Reduced threshold
     const legOffset = isMoving ? Math.sin(time * LEG_ANIMATION_SPEED) * LEG_LENGTH * 0.3 : 0;
-    
-    // Debug animation values
-    console.log('Animation values:', {
-        speed,
-        isMoving,
-        legOffset,
-        sinValue: Math.sin(time * LEG_ANIMATION_SPEED)
-    });
     
     // Draw legs
     ctx.fillStyle = colors[player.team].fill;
@@ -190,7 +169,7 @@ function drawPlayer(player, isHolder) {
         Math.PI * 2
     );
     ctx.fill();
-    ctx.stroke(); // Add stroke to make eye more visible
+    ctx.stroke();
     
     // Draw eye flare (white circle)
     ctx.fillStyle = '#ffffff';
@@ -218,7 +197,6 @@ function drawPlayer(player, isHolder) {
         );
     }
 
-    // Show stun effect
     if (player.stunned) {
         ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
         ctx.beginPath();

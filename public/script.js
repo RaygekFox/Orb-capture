@@ -113,6 +113,13 @@ function drawBase(base, color) {
 function drawPlayer(player, isHolder) {
     const time = Date.now();
     
+    // Debug movement values
+    console.log('Player movement:', {
+        dx: player.dx,
+        dy: player.dy,
+        speed: Math.sqrt(player.dx * player.dx + player.dy * player.dy)
+    });
+    
     // Calculate eye offset based on movement
     const eyeOffsetX = player.dx * MAX_EYE_OFFSET;
     const eyeOffsetY = player.dy * MAX_EYE_OFFSET;
@@ -122,10 +129,30 @@ function drawPlayer(player, isHolder) {
     const isMoving = speed > 0.1; // Add threshold to prevent tiny movements
     const legOffset = isMoving ? Math.sin(time * LEG_ANIMATION_SPEED) * LEG_LENGTH * 0.3 : 0;
     
+    // Debug animation values
+    console.log('Animation values:', {
+        isMoving,
+        legOffset,
+        time,
+        sinValue: Math.sin(time * LEG_ANIMATION_SPEED)
+    });
+    
     // Draw legs
     ctx.fillStyle = colors[player.team].fill;
     ctx.strokeStyle = colors[player.team].stroke;
     ctx.lineWidth = 2;
+    
+    // Debug drawing positions
+    console.log('Drawing positions:', {
+        playerX: player.x,
+        playerY: player.y,
+        eyeCenter: {
+            x: player.x + eyeOffsetX,
+            y: player.y + eyeOffsetY
+        },
+        eyeRadius: EYE_RADIUS,
+        playerSize: PLAYER_SIZE
+    });
     
     // Left leg
     ctx.fillRect(
@@ -144,7 +171,7 @@ function drawPlayer(player, isHolder) {
     );
     
     // Draw main body (rounded rectangle)
-    ctx.fillStyle = colors[player.team].fill;  // Reset fill style for body
+    ctx.fillStyle = colors[player.team].fill;
     ctx.strokeStyle = colors[player.team].stroke;
     roundRect(ctx, 
         player.x - PLAYER_SIZE/2,

@@ -36,6 +36,15 @@ gameUI.innerHTML = `
 `;
 document.body.appendChild(gameUI);
 
+// Add at the top with other constants
+const PLAYER_SIZE = 45;
+const EYE_RADIUS = PLAYER_SIZE * 0.3;
+const EYE_FLARE_RADIUS = EYE_RADIUS * 0.4;
+const LEG_LENGTH = PLAYER_SIZE * 0.4;
+const LEG_WIDTH = PLAYER_SIZE * 0.15;
+const MAX_EYE_OFFSET = 3;
+const LEG_ANIMATION_SPEED = 0.005;
+
 socket.on('gameState', (data) => {
     players = data.players;
     orb = data.orb;
@@ -102,24 +111,89 @@ function drawBase(base, color) {
 }
 
 function drawPlayer(player, isHolder) {
+    const time = Date.now();
+    
+    // Calculate eye offset based on movement
+    const eyeOffsetX = player.dx * MAX_EYE_OFFSET;
+    const eyeOffsetY = player.dy * MAX_EYE_OFFSET;
+    
+    // Calculate leg animation
+    const isMoving = player.dx !== 0 || player.dy !== 0;
+    const legOffset = isMoving ? Math.sin(time * LEG_ANIMATION_SPEED) * LEG_LENGTH * 0.3 : 0;
+    
+    // Draw legs
     ctx.fillStyle = colors[player.team].fill;
     ctx.strokeStyle = colors[player.team].stroke;
     ctx.lineWidth = 2;
-
-    // Draw rounded rectangle
-    roundRect(ctx, player.x - 15, player.y - 15, 30, 30, 8);
+    
+    // Left leg
+    ctx.fillRect(
+        player.x - PLAYER_SIZE/4 - LEG_WIDTH/2,
+        player.y + PLAYER_SIZE/2,
+        LEG_WIDTH,
+        LEG_LENGTH - legOffset
+    );
+    
+    // Right leg
+    ctx.fillRect(
+        player.x + PLAYER_SIZE/4 - LEG_WIDTH/2,
+        player.y + PLAYER_SIZE/2,
+        LEG_WIDTH,
+        LEG_LENGTH + legOffset
+    );
+    
+    // Draw main body (rounded rectangle)
+    roundRect(ctx, 
+        player.x - PLAYER_SIZE/2,
+        player.y - PLAYER_SIZE/2,
+        PLAYER_SIZE,
+        PLAYER_SIZE,
+        12
+    );
+    
+    // Draw eye (black circle)
+    ctx.fillStyle = '#000000';
+    ctx.beginPath();
+    ctx.arc(
+        player.x + eyeOffsetX,
+        player.y + eyeOffsetY,
+        EYE_RADIUS,
+        0,
+        Math.PI * 2
+    );
+    ctx.fill();
+    
+    // Draw eye flare (white circle)
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(
+        player.x + eyeOffsetX + EYE_RADIUS * 0.3,
+        player.y + eyeOffsetY - EYE_RADIUS * 0.3,
+        EYE_FLARE_RADIUS,
+        0,
+        Math.PI * 2
+    );
+    ctx.fill();
 
     if (isHolder) {
         ctx.strokeStyle = '#ffd43b';
         ctx.lineWidth = 3;
-        roundRect(ctx, player.x - 15, player.y - 15, 30, 30, 8, false, true);
+        roundRect(ctx,
+            player.x - PLAYER_SIZE/2,
+            player.y - PLAYER_SIZE/2,
+            PLAYER_SIZE,
+            PLAYER_SIZE,
+            12,
+            false,
+            true
+        );
     }
 
     // Show stun effect
     if (player.stunned) {
         ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
         ctx.beginPath();
-        ctx.arc(player.x, player.y, 20, 0, Math.PI * 2);
+        ctx.arc(player.x, player.y, PLAYER_SIZE * 0.8, 0, Math.PI * 2);
         ctx.fill();
     }
 }
@@ -231,58 +305,7 @@ canvas.addEventListener('click', (e) => {
     socket.emit('throwOrb', { targetX: clickX, targetY: clickY });
 });
 
-// Add styles to your CSS
-// const styleSheet = document.createElement('style');
-// styleSheet.textContent = `
-// .progress-container {
-//     position: fixed;
-//     top: 20px;
-//     left: 50%;
-//     transform: translateX(-50%);
-//     width: 300px;
-//     height: 30px;
-//     background: rgba(0, 0, 0, 0.3);
-//     border-radius: 15px;
-//     overflow: hidden;
-//     display: flex;
-//     border: 2px solid rgba(255, 255, 255, 0.2);
-// }
-//
-// .progress-bar {
-//     height: 100%;
-//     transition: width 0.3s ease;
-// }
-//
-// .progress-bar.red {
-//     background: #ff6b6b;
-// }
-//
-// .progress-bar.blue {
-//     background: #4dabf7;
-// }
-//
-// .team-switch-btn {
-//     position: fixed;
-//     bottom: 20px;
-//     left: 50%;
-//     transform: translateX(-50%);
-//     padding: 10px 20px;
-//     background: rgba(0, 0, 0, 0.3);
-//     border: 2px solid rgba(255, 255, 255, 0.2);
-//     color: white;
-//     border-radius: 20px;
-//     cursor: pointer;
-//     font-family: Arial, sans-serif;
-//     transition: background 0.3s;
-// }
-//
-// .team-switch-btn:hover {
-//     background: rgba(0, 0, 0, 0.5);
-// }
-// `;
-// document.head.appendChild(styleSheet);
 
-// Add collision detection to player movement
 function checkBarrierCollision(x, y, team) {
     return barriers.some(barrier => {
         if (barrier.team === team) return false;

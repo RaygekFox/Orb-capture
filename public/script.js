@@ -44,7 +44,7 @@ const LEG_LENGTH = PLAYER_SIZE * 0.3;
 const LEG_WIDTH = PLAYER_SIZE * 0.3;
 const MAX_EYE_OFFSET = 3;
 const LEG_ANIMATION_SPEED = 0.03;
-const EYELID_CHANCE = 0.01;
+const BLINK_CHANCE = 0.0005;
 const BLINK_DURATION = 100;
 let blinkStart = 0;
 
@@ -190,7 +190,7 @@ function drawPlayer(player, isHolder) {
     ctx.fill();
 
     // Draw eyelid
-    if (Math.random() < EYELID_CHANCE) {
+    if (Math.random() < BLINK_CHANCE) {
         blinkStart = Date.now();
     }
 

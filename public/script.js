@@ -36,14 +36,17 @@ gameUI.innerHTML = `
 `;
 document.body.appendChild(gameUI);
 
-// Add at the top with other constants
+// Animation parameters
 const PLAYER_SIZE = 45;
 const EYE_RADIUS = PLAYER_SIZE * 0.3;
 const EYE_FLARE_RADIUS = EYE_RADIUS * 0.4;
-const LEG_LENGTH = PLAYER_SIZE * 0.4;
-const LEG_WIDTH = PLAYER_SIZE * 0.15;
+const LEG_LENGTH = PLAYER_SIZE * 0.3;
+const LEG_WIDTH = PLAYER_SIZE * 0.3;
 const MAX_EYE_OFFSET = 3;
-const LEG_ANIMATION_SPEED = 0.005;
+const LEG_ANIMATION_SPEED = 0.03;
+const EYELID_CHANCE = 0.01;
+const BLINK_DURATION = 100;
+let blinkStart = 0;
 
 socket.on('gameState', (data) => {
     players = data.players;
@@ -122,45 +125,12 @@ function drawPlayer(player, isHolder) {
     const dx = (player.id === socket.id) ? currentMovement.dx : 0;
     const dy = (player.id === socket.id) ? currentMovement.dy : 0;
     
-    // Debug movement values
-    console.log('Player coordinates:', {
-        playerX: player.x,
-        playerY: player.y,
-        dx,
-        dy,
-        isLocalPlayer: player.id === socket.id
-    });
-    
-    // Calculate eye offset based on movement
-    const eyeOffsetX = dx * MAX_EYE_OFFSET;
-    const eyeOffsetY = dy * MAX_EYE_OFFSET;
-    
-    // Debug eye position
-    console.log('Eye position:', {
-        baseX: player.x,
-        baseY: player.y,
-        offsetX: eyeOffsetX,
-        offsetY: eyeOffsetY,
-        finalX: player.x + eyeOffsetX,
-        finalY: player.y + eyeOffsetY,
-        eyeRadius: EYE_RADIUS,
-        flarePosition: {
-            x: player.x + eyeOffsetX + EYE_RADIUS * 0.3,
-            y: player.y + eyeOffsetY - EYE_RADIUS * 0.3
-        }
-    });
     
     // Calculate leg animation - only animate if actually moving
     const isMoving = player.isMoving; // Use the isMoving state from the server
     const legOffset = isMoving ? Math.sin(time * LEG_ANIMATION_SPEED) * LEG_LENGTH * 0.3 : 0;
     
-    // Debug animation values
-    console.log('Animation values:', {
-        isMoving,
-        legOffset,
-        time,
-        sinValue: Math.sin(time * LEG_ANIMATION_SPEED)
-    });
+
     
     // Draw legs
     ctx.fillStyle = colors[player.team].fill;
@@ -198,8 +168,8 @@ function drawPlayer(player, isHolder) {
     ctx.fillStyle = '#000000';
     ctx.beginPath();
     ctx.arc(
-        player.x + eyeOffsetX,
-        player.y + eyeOffsetY,
+        player.x,
+        player.y,
         EYE_RADIUS,
         0,
         Math.PI * 2
@@ -211,13 +181,27 @@ function drawPlayer(player, isHolder) {
     ctx.fillStyle = '#ffffff';
     ctx.beginPath();
     ctx.arc(
-        player.x + eyeOffsetX + EYE_RADIUS * 0.3,
-        player.y + eyeOffsetY - EYE_RADIUS * 0.3,
+        player.x + EYE_RADIUS * 0.3,
+        player.y - EYE_RADIUS * 0.3,
         EYE_FLARE_RADIUS,
         0,
         Math.PI * 2
     );
     ctx.fill();
+
+    // Draw eyelid
+    if (Math.random() < EYELID_CHANCE) {
+        blinkStart = Date.now();
+    }
+
+    if (time < blinkStart + BLINK_DURATION) {
+        ctx.fillStyle = colors[player.team].fill;
+        ctx.beginPath();
+        ctx.rect(player.x - EYE_RADIUS * 0.3, player.y - EYE_RADIUS * 0.3, EYE_RADIUS * 0.6, EYE_RADIUS * 0.3);
+        ctx.fill();
+    }
+
+
 
     if (isHolder) {
         ctx.strokeStyle = '#ffd43b';

@@ -54,8 +54,6 @@ const teamProgress = {
 const barriers = [];
 
 io.on('connection', (socket) => {
-    console.log(`Player connected: ${socket.id}`);
-    
     players[socket.id] = {
         x: Math.random() * (GAME_WIDTH - PLAYER_SIZE),
         y: Math.random() * (GAME_HEIGHT - PLAYER_SIZE),
@@ -64,7 +62,8 @@ io.on('connection', (socket) => {
         lastMoveTime: Date.now(),
         stunned: false,
         stunEndTime: 0,
-        lastBarrierTime: 0
+        lastBarrierTime: 0,
+        isMoving: false
     };
 
     // Initialize movement state for new player
@@ -202,7 +201,6 @@ io.on('connection', (socket) => {
     });
 
     socket.on('disconnect', () => {
-        console.log(`Player disconnected: ${socket.id}`);
         delete players[socket.id];
         if (orb.holder === socket.id) orb.holder = null;
         io.emit('gameState', { players, orb, bases, teamProgress, barriers });
@@ -220,7 +218,15 @@ setInterval(() => {
         const movement = playerMovements[playerId];
         const player = players[playerId];
         
-        if (!player || !movement.isMoving || player.stunned) return;
+        if (!player) return;
+
+        // Update isMoving based on lastMoveTime
+        player.isMoving = (currentTime - player.lastMoveTime) < 100;
+
+        // Log the isMoving status for each player
+        console.log(`Player ${playerId} isMoving: ${player.isMoving}`);
+
+        if (!movement.isMoving || player.stunned) return;
         if (currentTime < player.stunEndTime) return;
 
         // Apply speed modifications

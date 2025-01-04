@@ -197,7 +197,7 @@ function drawPlayer(player, isHolder) {
     if (time < blinkStart + BLINK_DURATION) {
         ctx.fillStyle = colors[player.team].fill;
         ctx.beginPath();
-        ctx.rect(player.x - EYE_RADIUS * 0.3, player.y - EYE_RADIUS * 0.3, EYE_RADIUS * 0.6, EYE_RADIUS * 0.3);
+        ctx.rect(player.x - EYE_RADIUS, player.y - EYE_RADIUS, EYE_RADIUS * 2, EYE_RADIUS * 2);
         ctx.fill();
     }
 

@@ -59,14 +59,12 @@ io.on('connection', (socket) => {
         y: Math.random() * (GAME_HEIGHT - PLAYER_SIZE),
         score: 0,
         team: Math.random() < 0.5 ? TEAMS.RED : TEAMS.BLUE,
-        lastMoveTime: Date.now(),
         stunned: false,
         stunEndTime: 0,
         lastBarrierTime: 0,
         isMoving: false
     };
 
-    // Initialize movement state for new player
     playerMovements[socket.id] = {
         dx: 0,
         dy: 0,
@@ -80,11 +78,17 @@ io.on('connection', (socket) => {
         playerMovements[socket.id].dx = data.dx;
         playerMovements[socket.id].dy = data.dy;
         playerMovements[socket.id].isMoving = true;
+        
+        // Set isMoving to true
+        players[socket.id].isMoving = true;
     });
 
-    socket.on('moveEnd', (data) => {
+    socket.on('moveEnd', () => {
         if (!playerMovements[socket.id]) return;
         playerMovements[socket.id].isMoving = false;
+        
+        // Set isMoving to false
+        players[socket.id].isMoving = false;
     });
 
     socket.on('orbAction', () => {
@@ -210,7 +214,6 @@ io.on('connection', (socket) => {
 
 // Add continuous movement update loop
 setInterval(() => {
-    const currentTime = Date.now();
     const deltaTime = 1/60; // 60 FPS
 
     // Update all moving players
@@ -219,15 +222,8 @@ setInterval(() => {
         const player = players[playerId];
         
         if (!player) return;
-
-        // Update isMoving based on lastMoveTime
-        player.isMoving = (currentTime - player.lastMoveTime) < 100;
-
-        // Log the isMoving status for each player
-        console.log(`Player ${playerId} isMoving: ${player.isMoving}`);
-
         if (!movement.isMoving || player.stunned) return;
-        if (currentTime < player.stunEndTime) return;
+        if (Date.now() < player.stunEndTime) return;
 
         // Apply speed modifications
         let currentSpeed = BASE_MOVEMENT_SPEED;

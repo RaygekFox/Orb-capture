@@ -51,6 +51,11 @@ socket.on('gameState', (data) => {
     bases = data.bases;
     barriers = data.barriers || [];
     
+    // Log the isMoving state for each player
+    Object.entries(players).forEach(([id, player]) => {
+        console.log(`Player ${id} isMoving: ${player.isMoving}`);
+    });
+    
     // Update progress bars with new selectors
     const redFill = document.querySelector('.red-team .progress-fill');
     const blueFill = document.querySelector('.blue-team .progress-fill');

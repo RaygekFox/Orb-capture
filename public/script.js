@@ -151,8 +151,7 @@ function drawPlayer(player, isHolder) {
     });
     
     // Calculate leg animation - only animate if actually moving
-    const speed = Math.sqrt(dx * dx + dy * dy);
-    const isMoving = speed > 0.1; // Add threshold to prevent tiny movements
+    const isMoving = player.isMoving; // Use the isMoving state from the server
     const legOffset = isMoving ? Math.sin(time * LEG_ANIMATION_SPEED) * LEG_LENGTH * 0.3 : 0;
     
     // Debug animation values
